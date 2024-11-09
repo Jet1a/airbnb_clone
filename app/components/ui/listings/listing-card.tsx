@@ -2,7 +2,6 @@
 
 import useCountries from "@/app/hooks/useCountries";
 import { SafeListing, SafeReservation, SafeUser } from "@/app/types";
-import { Reservation } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 
@@ -19,6 +18,8 @@ interface ListingCardProps {
   actionLabel?: string;
   actionId?: string;
   currentUser?: SafeUser | null;
+  onSecondaryAction?: (listing: SafeListing) => void;
+  secondaryActionLabel?: string;
 }
 
 const ListingCard = ({
@@ -29,6 +30,8 @@ const ListingCard = ({
   actionId = "",
   actionLabel,
   currentUser,
+  onSecondaryAction,
+  secondaryActionLabel,
 }: ListingCardProps) => {
   const router = useRouter();
   const { getByValue } = useCountries();
@@ -44,6 +47,16 @@ const ListingCard = ({
       onAction?.(actionId);
     },
     [onAction, disabled, actionId]
+  );
+
+  const handleEdit = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+
+      if (disabled) return;
+      onSecondaryAction?.(data);
+    },
+    [onSecondaryAction, disabled, data]
   );
 
   const price = useMemo(() => {
@@ -95,6 +108,15 @@ const ListingCard = ({
             small
             label={actionLabel}
             onClick={handleCancel}
+          />
+        )}
+        {onSecondaryAction && secondaryActionLabel && (
+          <Button
+            disable={disabled}
+            small
+            outline
+            label={secondaryActionLabel}
+            onClick={handleEdit}
           />
         )}
       </div>

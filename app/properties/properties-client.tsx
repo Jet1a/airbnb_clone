@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import toast from "react-hot-toast";
 import ListingCard from "../components/ui/listings/listing-card";
+import useRentModal from "../hooks/useRentModal";
+import RentModal from "../components/ui/modals/rent-modal";
 
 interface PropertiesClientProps {
   listings: SafeListing[];
@@ -15,8 +17,10 @@ interface PropertiesClientProps {
 }
 
 const PropertiesClient = ({ listings, currentUser }: PropertiesClientProps) => {
+  const rentModal = useRentModal();
   const router = useRouter();
   const [deletingId, setDeletingId] = useState("");
+  const [editingListing, setEditingListing] = useState<SafeListing | null>(null)
 
   const onCancel = useCallback(
     (id: string) => {
@@ -38,6 +42,14 @@ const PropertiesClient = ({ listings, currentUser }: PropertiesClientProps) => {
     [router]
   );
 
+  const onEdit = useCallback(
+    (listing: SafeListing) => {
+      setEditingListing(listing)
+      rentModal.onOpen();
+    },
+    [rentModal]
+  );
+
   return (
     <Container>
       <Heading title="Properties" subtitle="List of your properties" />
@@ -51,9 +63,12 @@ const PropertiesClient = ({ listings, currentUser }: PropertiesClientProps) => {
             disabled={deletingId === listing.id}
             actionLabel="Delete property"
             currentUser={currentUser}
+            secondaryActionLabel="Edit property"
+            onSecondaryAction={onEdit}
           />
         ))}
       </div>
+      <RentModal initialValues={editingListing}/>
     </Container>
   );
 };

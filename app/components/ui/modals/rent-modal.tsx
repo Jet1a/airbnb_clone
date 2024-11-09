@@ -2,13 +2,12 @@
 
 import useRentModal from "@/app/hooks/useRentModal";
 import Modal from "./modal";
-import { useCallback, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Heading from "../../heading";
 import { categories } from "../navbar/categories";
 import CategoryInput from "../inputs/category_input";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import CountrySelect from "../inputs/country-select";
-import Map from "../../map";
 import dynamic from "next/dynamic";
 import Counter from "../inputs/counter";
 import ImageUpload from "../inputs/image-upload";
@@ -16,6 +15,7 @@ import Input from "../inputs/input";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { SafeListing } from "@/app/types";
 
 enum STEPS {
   CATEGORY = 0,
@@ -26,7 +26,11 @@ enum STEPS {
   PRICE = 5,
 }
 
-const RentModal = () => {
+interface RentModalProps {
+  initialValues?: SafeListing | null;
+}
+
+const RentModal = ({ initialValues }: RentModalProps) => {
   const rentModal = useRentModal();
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -54,6 +58,22 @@ const RentModal = () => {
     },
   });
 
+  useEffect(() => {
+    if (initialValues) {
+      reset({
+        category: initialValues.category || "",
+        location: initialValues.locationValue || null,
+        guestCount: initialValues.guestCount || 1,
+        roomCount: initialValues.roomCount || 1,
+        bathroomCount: initialValues.bathroomCount || 1,
+        imageSrc: initialValues.imageSrc || "",
+        price: initialValues.price || 1,
+        title: initialValues.title || "",
+        description: initialValues.description || "",
+      });
+    }
+  }, [initialValues, reset]);
+
   const category = watch("category");
   const location = watch("location");
   const guestCount = watch("guestCount");
@@ -66,7 +86,7 @@ const RentModal = () => {
       dynamic(() => import("../../map"), {
         ssr: false,
       }),
-    [location]
+    []
   );
 
   const setCustomValue = (id: string, value: any) => {
@@ -90,10 +110,20 @@ const RentModal = () => {
 
     setIsLoading(true);
 
+    const apiUrl = initialValues
+      ? `/api/listings/${initialValues.id}`
+      : `/api/listings`;
+
+    const method = initialValues ? "PUT" : "POST";
+
     axios
-      .post(`/api/listings`, data)
+      .request({
+        url: apiUrl,
+        method: method,
+        data: data,
+      })
       .then(() => {
-        toast.success("Listing Created!");
+        toast.success(initialValues ? "Listing Update!" :"Listing Created!");
         router.refresh();
         reset();
         setStep(STEPS.CATEGORY);
@@ -108,11 +138,12 @@ const RentModal = () => {
   };
 
   const actionLabel = useMemo(() => {
+    if (initialValues) return "Save Changes";
     if (step === STEPS.PRICE) {
       return "Create";
     }
     return "Next";
-  }, [step]);
+  }, [step, initialValues]);
 
   const secondaryActionLabel = useMemo(() => {
     if (step === STEPS.CATEGORY) {
