@@ -46,27 +46,27 @@ export default async function getListings(params: IListingsParams) {
       query.bathroomCount = { gte: +bathroomCount };
     }
 
-    if(locationValue){
-      query.locationValue = locationValue
+    if (locationValue) {
+      query.locationValue = locationValue;
     }
 
-    if(startDate && endDate){
+    if (startDate && endDate) {
       query.NOT = {
         reservations: {
-          some:{
-            OR:[
+          some: {
+            OR: [
               {
-                endDate: {gte: startDate},
-                startDate: {lte: startDate},
+                endDate: { gte: startDate },
+                startDate: { lte: startDate },
               },
               {
-                startDate: {lte: endDate},
-                endDate: {gte: endDate}
-              }
-            ]
-          }
-        }
-      }
+                startDate: { lte: endDate },
+                endDate: { gte: endDate },
+              },
+            ],
+          },
+        },
+      };
     }
 
     const listings = await prisma.listing.findMany({
